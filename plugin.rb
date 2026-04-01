@@ -18,6 +18,19 @@ gem 'mkmfmf', '0.4', require: false
 gem 'keccak', '1.3.0', require: false
 gem 'zip', '2.0.2', require: false
 gem 'mini_portile2', '2.8.0', require: false
+
+# Patch rbsecp256k1 gemspec to remove rubyzip runtime dependency
+gems_dir = File.join(File.dirname(__FILE__), "gems")
+if Dir.exist?(gems_dir)
+  Dir[File.join(gems_dir, "*", "specifications", "rbsecp256k1-*.gemspec")].each do |gemspec_path|
+    content = File.read(gemspec_path)
+    if content.include?('rubyzip') && !content.include?('# patched-rubyzip')
+      patched = content.gsub(/[^\n]*rubyzip[^\n]*\n/, '')
+      File.write(gemspec_path, "# patched-rubyzip\n" + patched)
+    end
+  end
+end
+
 gem 'rbsecp256k1', '6.0.0', require: false
 gem 'konstructor', '1.0.2', require: false
 gem 'ffi', '1.17.2', require: false
