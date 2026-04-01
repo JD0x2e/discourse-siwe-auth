@@ -4,14 +4,13 @@
 # about: A discourse plugin to enable users to authenticate via Sign In with Ethereum
 # version: 0.1.3
 
-# rbsecp256k1 requires rubyzip ~> 2.3 but only at build time, not runtime.
-# Discourse ships rubyzip 3.x which triggers a conflict on activation.
-# This patches the exact method that raises Gem::ConflictError.
+# rbsecp256k1 declares rubyzip ~> 2.3 as a runtime dep but only needs it at build time.
+# Discourse ships rubyzip 3.x. Patch the conflict detection to ignore this specific case.
 unless defined?(SIWE_RUBYZIP_PATCHED)
   SIWE_RUBYZIP_PATCHED = true
-  Gem::Dependency.prepend(Module.new do
-    def matches_spec?(spec)
-      return true if name == 'rubyzip' && spec.name == 'rubyzip'
+  Gem::Specification.prepend(Module.new do
+    def conflicts
+      return super.reject { |name, _| name == 'rubyzip' } if self.name == 'rbsecp256k1'
       super
     end
   end)
