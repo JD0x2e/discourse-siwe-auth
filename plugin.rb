@@ -4,6 +4,24 @@
 # about: A discourse plugin to enable users to authenticate via Sign In with Ethereum
 # version: 0.1.3
 
+unless defined?(SIWE_RUBYZIP_PATCHED)
+  SIWE_RUBYZIP_PATCHED = true
+  module Gem
+    class Specification
+      class << self
+        alias_method :original_load, :load
+        def load(file)
+          spec = original_load(file)
+          if spec && spec.name == 'rbsecp256k1'
+            spec.dependencies.reject! { |d| d.name == 'rubyzip' }
+          end
+          spec
+        end
+      end
+    end
+  end
+end
+
 enabled_site_setting :discourse_siwe_enabled
 register_svg_icon 'fab-ethereum'
 register_asset 'stylesheets/discourse-siwe.scss'
@@ -18,19 +36,6 @@ gem 'mkmfmf', '0.4', require: false
 gem 'keccak', '1.3.0', require: false
 gem 'zip', '2.0.2', require: false
 gem 'mini_portile2', '2.8.0', require: false
-
-# Pre-install and patch rbsecp256k1 to remove rubyzip runtime dependency
-gems_dir = File.join(File.dirname(__FILE__), "gems/#{RUBY_VERSION}")
-spec_file = Dir[File.join(gems_dir, "specifications/rbsecp256k1-*.gemspec")].first
-unless spec_file
-  system("gem install rbsecp256k1 -v 6.0.0 -i #{gems_dir} --no-document --ignore-dependencies --no-user-install")
-  spec_file = Dir[File.join(gems_dir, "specifications/rbsecp256k1-*.gemspec")].first
-end
-if spec_file && File.exist?(spec_file)
-  content = File.read(spec_file)
-  File.write(spec_file, content.gsub(/.*rubyzip.*\n/, ''))
-end
-
 gem 'rbsecp256k1', '6.0.0', require: false
 gem 'konstructor', '1.0.2', require: false
 gem 'ffi', '1.17.2', require: false
