@@ -5,26 +5,14 @@
 # version: 0.1.3
 
 # rbsecp256k1 requires rubyzip ~> 2.3 but only at build time, not runtime.
-# Temporarily hide rubyzip from loaded specs during rbsecp256k1 activation.
 unless defined?(SIWE_RUBYZIP_PATCHED)
   SIWE_RUBYZIP_PATCHED = true
-  module PluginGem
-    class << self
-      alias_method :original_load, :load
-      def load(plugin, name, version, opts = {})
-        if name == 'rbsecp256k1'
-          rubyzip_spec = Gem.loaded_specs.delete('rubyzip')
-          begin
-            original_load(plugin, name, version, opts)
-          ensure
-            Gem.loaded_specs['rubyzip'] = rubyzip_spec if rubyzip_spec
-          end
-        else
-          original_load(plugin, name, version, opts)
-        end
-      end
+  Gem::Specification.prepend(Module.new do
+    def conflicts
+      return super.reject { |spec, _| spec.name == 'rubyzip' } if self.name == 'rbsecp256k1'
+      super
     end
-  end
+  end)
 end
 
 enabled_site_setting :discourse_siwe_enabled
@@ -41,19 +29,6 @@ gem 'mkmfmf', '0.4', require: false
 gem 'keccak', '1.3.0', require: false
 gem 'zip', '2.0.2', require: false
 gem 'mini_portile2', '2.8.0', require: false
-
-# Patch rbsecp256k1 gemspec to remove rubyzip runtime dependency
-gems_dir = File.join(File.dirname(__FILE__), "gems")
-if Dir.exist?(gems_dir)
-  Dir[File.join(gems_dir, "*", "specifications", "rbsecp256k1-*.gemspec")].each do |gemspec_path|
-    content = File.read(gemspec_path)
-    if content.include?('rubyzip') && !content.include?('# patched-rubyzip')
-      patched = content.gsub(/[^\n]*rubyzip[^\n]*\n/, '')
-      File.write(gemspec_path, "# patched-rubyzip\n" + patched)
-    end
-  end
-end
-
 gem 'rbsecp256k1', '6.0.0', require: false
 gem 'konstructor', '1.0.2', require: false
 gem 'ffi', '1.17.2', require: false
