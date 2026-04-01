@@ -4,17 +4,6 @@
 # about: A discourse plugin to enable users to authenticate via Sign In with Ethereum
 # version: 0.1.3
 
-# rbsecp256k1 requires rubyzip ~> 2.3 but only at build time, not runtime.
-unless defined?(SIWE_RUBYZIP_PATCHED)
-  SIWE_RUBYZIP_PATCHED = true
-  Gem::Specification.prepend(Module.new do
-    def raise_if_conflicts
-      return if self.name == 'rbsecp256k1'
-      super
-    end
-  end)
-end
-
 enabled_site_setting :discourse_siwe_enabled
 register_svg_icon 'fab-ethereum'
 register_asset 'stylesheets/discourse-siwe.scss'
