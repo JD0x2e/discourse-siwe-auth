@@ -8,8 +8,8 @@
 unless defined?(SIWE_RUBYZIP_PATCHED)
   SIWE_RUBYZIP_PATCHED = true
   Gem::Specification.prepend(Module.new do
-    def conflicts
-      return super.reject { |spec, _| spec.name == 'rubyzip' } if self.name == 'rbsecp256k1'
+    def raise_if_conflicts
+      return if self.name == 'rbsecp256k1'
       super
     end
   end)
