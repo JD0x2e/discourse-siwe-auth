@@ -6,17 +6,19 @@
 
 unless defined?(SIWE_RUBYZIP_PATCHED)
   SIWE_RUBYZIP_PATCHED = true
-  module Gem
-    class Specification
-      class << self
-        alias_method :original_load, :load
-        def load(file)
-          spec = original_load(file)
-          if spec && spec.name == 'rbsecp256k1'
-            spec.dependencies.reject! { |d| d.name == 'rubyzip' }
-          end
-          spec
+  module PluginGem
+    class << self
+      alias_method :original_load, :load
+      def load(path, name, version, opts = nil)
+        original_load(path, name, version, opts)
+      rescue Gem::ConflictError => e
+        raise unless name == 'rbsecp256k1' && e.message.include?('rubyzip')
+        gems_path = File.dirname(path) + "/gems/#{RUBY_VERSION}"
+        Dir[gems_path + "/specifications/rbsecp256k1-*.gemspec"].each do |f|
+          File.write(f, File.read(f).gsub(/.*rubyzip.*\n/, ''))
         end
+        spec_file = Dir[gems_path + "/specifications/rbsecp256k1-*.gemspec"].first
+        Gem::Specification.load(spec_file).activate if spec_file
       end
     end
   end
